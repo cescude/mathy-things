@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<style>
+	body {
+		margin-top: 50px;
+		font-size: 20px;
+	}
+	#problem {
+		text-align: center;
+	}
+	#problem term, #problem input {
+		font-size: 30px;
+		display: inline-block;
+		width: 50px;
+		height: 50px;
+		text-align: center;
+		line-height: 50px;
+		vertical-align: middle;
+	}
+</style>
+<div id=problem></div>
+
+<script>
+
+const $ = document.querySelector.bind(document);
+
+function iota(a, b) {
+	let result = [];
+	while (a <= b) {
+		result.push(a++);
+	}
+	return result;
+}
+
+function rnd(a, b) {
+	return Math.floor(Math.random()*(b-a+1))+a;
+}
+
+function shuffle(array) {
+	for (let i=0; i<array.length; i++) {
+		const j = rnd(i, array.length-1);
+		const v = array[j];
+		array[j] = array[i];
+		array[i] = v;
+	}
+	return array;
+}
+
+function factorsOf(n) {
+	let result = [];
+	for (let i=2; i<n/2; i++) {
+		if (Math.floor(n/i) * i == n) {
+			result.push([i, n/i]);
+		}
+	}
+	return result;
+}
+
+function makeProblems([A, B]) {
+	return [
+		{ a:A, b:B, c: A*B, covered: 0, time: Infinity },
+		{ a:A, b:B, c: A*B, covered: 1, time: Infinity },
+		{ a:A, b:B, c: A*B, covered: 2, time: Infinity },
+	];
+}
+
+function maybeFlip(problem) {
+	const { a, b, c, covered, time } = problem;
+	return a == b 
+		? [problem]
+	 	: [problem, { a:b, b:a, c, covered, time }];
+}
+
+function generate() {
+	return iota(1,100)
+		.flatMap(n => factorsOf(n))
+		.filter(([a,b]) => a<=10 && b<=10) // ok, for now no 13*3 or whatever
+		.flatMap(makeProblems)
+		.flatMap(maybeFlip);
+}
+
+const work = { seen: [], unseen: [] };
+
+function organize() {
+	const { unseen, seen } = work;
+
+	const current = seen.shift(); // pluck off the current question, we don't want to repeat
+	seen.sort((a, b) => b.time - a.time); // ensure the slowest-to-correct is up top
+	seen.push(current); // after sorting and what-not, add the prior question at the end
+
+	if (seen[0]?.time < 10 && unseen.length) {
+		seen.unshift(unseen.shift());
+	}
+
+
+	// probably not necessary, but why not
+	work.seen = seen;
+	work.unseen = unseen; 
+}
+
+function newGame() {
+	work.unseen = shuffle(generate());
+	work.seen = [work.unseen.pop()];
+}
+
+function loadGame() {
+	const storedData = localStorage.getItem(NAME);
+	if (storedData) {
+		const unpacked = JSON.parse(storedData);
+		work.seen = unpacked.seen;
+		work.unseen = unpacked.unseen;
+		return true;
+	}
+	return false;
+}
+
+function saveGame() {
+	localStorage.setItem(NAME, JSON.stringify(work));
+}
+
+function clearMemory() {
+	localStorage.removeItem(NAME);
+}
+
+function setupGame() {
+	if (!loadGame()) newGame();
+}
+
+function isCorrect(n) {
+	const {a, b, c, covered, time} = work.seen[0];
+	return false ||
+		covered == 0 && n * b == c ||
+		covered == 1 && a * n == c ||
+		covered == 2 && a * b == n;
+}
+
+let question_t0 = undefined;
+
+function tryAnswer(n) {
+	const { a, b, c, covered } = work.seen[0];
+
+	if (!(isCorrect(n))) return; // keep waiting until the answer is correct
+
+	work.seen[0].time = (new Date().getTime() - question_t0)/1000;
+
+	$('#problem').innerHTML = Problem(a, b, c);
+
+	setTimeout(() => {
+		organize();
+		setupProblem();
+		saveGame();
+	}, 750);
+}
+
+function setupProblem() {
+	const { a, b, c, covered } = work.seen[0];
+
+	$('#problem').innerHTML = Problem(
+		covered == 0 ? undefined : a,
+		covered == 1 ? undefined : b,
+		covered == 2 ? undefined : c
+	);
+
+	$('input').focus();
+
+	question_t0 = new Date().getTime();
+}
+
+function Problem(a, b, c) {
+	function term(value) {
+		return value === undefined ? '<input>' : `<term>${value}</term>`;
+	}
+
+	return `<span>${term(a)}</span> x <span>${term(b)}</span> = <span>${term(c)}</span>`;
+}
+
+const NAME = "YOUR_NAME";
+setupGame();
+setupProblem();
+saveGame();
+
+$('body').addEventListener('input', evt => {
+	// only one text-entry element, so no need to differentiate
+	if (evt.target.value.length) {
+		tryAnswer(evt.target.value * 1);
+	}
+});
+
+</script>
