@@ -91,6 +91,10 @@ function organize() {
 		seen.unshift(unseen.shift());
 	}
 
+	// 20% chance to promote a random problem from the backlog
+	if (rnd(1,10) <=2) {
+		shuffle(seen);
+	}
 
 	// probably not necessary, but why not
 	work.seen = seen;
@@ -168,8 +172,8 @@ function setupProblem() {
 function Problem(a, b, c) {
 	const term = value =>
 		value === undefined
-		? '<input autofocus inputmode=numeric>'
-		: `<term>${value}</term>`;
+			? '<input autofocus inputmode=numeric>'
+			: `<term>${value}</term>`;
 
 	return `<span>${term(a)}</span> × <span>${term(b)}</span> = <span>${term(c)}</span>`;
 }
