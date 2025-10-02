@@ -3,19 +3,21 @@
 <style>
 	body {
 		margin-top: 50px;
-		font-size: 20px;
+		font-size: 30px;
 	}
 	#problem {
 		text-align: center;
 	}
 	#problem term, #problem input {
-		font-size: 30px;
 		display: inline-block;
 		width: 50px;
 		height: 50px;
 		text-align: center;
 		line-height: 50px;
 		vertical-align: middle;
+	}
+	#problem input {
+		font-size: inherit;
 	}
 </style>
 <div id=problem></div>
@@ -172,7 +174,7 @@ function Problem(a, b, c) {
 		? '<input autofocus inputmode=numeric>'
 		: `<term>${value}</term>`;
 
-	return `<span>${term(a)}</span> x <span>${term(b)}</span> = <span>${term(c)}</span>`;
+	return `<span>${term(a)}</span> × <span>${term(b)}</span> = <span>${term(c)}</span>`;
 }
 
 const NAME = "YOUR_NAME";
